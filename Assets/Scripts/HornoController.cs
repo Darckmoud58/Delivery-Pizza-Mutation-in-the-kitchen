@@ -5,51 +5,102 @@ using Photon.Pun;
 
 public class HornoController : MonoBehaviourPun, IPunObservable
 {
-    [Header("Vida")]
+    [Header("Vida del Horno")]
     public int vidaMaxima = 200;
     public int vidaActual;
 
-    [Header("Spawn de enemigos")]
+    [Header("Tiempos aleatorios de apertura")]
+    public float cerradoMin = 2f;
+    public float cerradoMax = 5f;
+    public float abiertoMin = 1.5f;
+    public float abiertoMax = 3f;
+
+    [Header("Generador de enemigos")]
     public string prefabEnemigo = "Enemigo";
+    public float spawnFase0 = 5f;   // vida > 60%
+    public float spawnFase1 = 3f;   // vida 30-60%
+    public float spawnFase2 = 1.5f; // vida < 30%
     public Vector2 spawnOffsetMin = new Vector2(-1.5f, -1.2f);
-    public Vector2 spawnOffsetMax = new Vector2( 1.5f, -0.6f);
+    public Vector2 spawnOffsetMax = new Vector2(1.5f, -0.6f);
 
-    [Header("Cadencia por fase (segundos)")]
-    public float spawnFase0 = 5f;   // 100% → 61% vida  (normal)
-    public float spawnFase1 = 3f;   // 60%  → 31% vida  (dañado)
-    public float spawnFase2 = 1.5f; // 30%  → 1%  vida  (crítico)
-
-    [Header("Enemigos por spawn")]
-    public int cantidadFase0 = 1;
-    public int cantidadFase2 = 2;   // En fase crítica salen de 2 en 2
+    // Estado interno
+    bool estaAbierto = false;
+    bool destruido = false;
 
     Animator anim;
-    bool     destruido;
-    Coroutine rutina;
+    Coroutine rutinaApertura;
+    Coroutine rutinaSpawn;
 
     void Start()
     {
         vidaActual = vidaMaxima;
         anim = GetComponent<Animator>();
 
+        // Solo el Master controla la lógica
         if (PhotonNetwork.IsMasterClient)
-            rutina = StartCoroutine(LoopSpawn());
+        {
+            rutinaApertura = StartCoroutine(CicloAperturaRandom());
+            rutinaSpawn = StartCoroutine(LoopSpawn());
+        }
+
+        ActualizarHUD();
     }
 
-    // ---- LOOP DE SPAWN ----
+    // ─────────────────────────────────────────
+    // CICLO ABIERTO / CERRADO RANDOM
+    // ─────────────────────────────────────────
+    IEnumerator CicloAperturaRandom()
+    {
+        while (!destruido)
+        {
+            // Cerrado por tiempo aleatorio
+            float tiempoCerrado = Random.Range(cerradoMin, cerradoMax);
+            photonView.RPC(nameof(RPC_CambiarEstado), RpcTarget.All, false);
+            yield return new WaitForSeconds(tiempoCerrado);
+
+            if (destruido) yield break;
+
+            // Abierto por tiempo aleatorio
+            float tiempoAbierto = Random.Range(abiertoMin, abiertoMax);
+            photonView.RPC(nameof(RPC_CambiarEstado), RpcTarget.All, true);
+            yield return new WaitForSeconds(tiempoAbierto);
+        }
+    }
+
+    [PunRPC]
+    void RPC_CambiarEstado(bool abierto)
+    {
+        estaAbierto = abierto;
+
+        if (anim != null)
+            anim.SetBool("abierto", estaAbierto);
+
+        Debug.Log("Horno: " + (estaAbierto ? "ABIERTO - vulnerable" : "CERRADO - invulnerable"));
+
+        [PunRPC]
+        void RPC_CambiarEstado(bool abierto)
+        {
+            estaAbierto = abierto;
+            if (anim != null)
+                anim.SetBool("abierto", estaAbierto);
+
+            Debug.Log("RPC recibido - Horno: " + (estaAbierto ? "ABIERTO" : "CERRADO") + " | anim null? " + (anim == null));
+        }
+    }
+
+    // ─────────────────────────────────────────
+    // SPAWN DE ENEMIGOS POR FASE
+    // ─────────────────────────────────────────
     IEnumerator LoopSpawn()
     {
         while (!destruido)
         {
-            yield return new WaitForSeconds(GetTiempoActual());
-
-            int cantidad = GetCantidadActual();
-            for (int i = 0; i < cantidad; i++)
-                SpawnEnemigo();
+            yield return new WaitForSeconds(GetTiempoSpawn());
+            SpawnEnemigo();
         }
     }
 
-    float GetTiempoActual()
+    float GetTiempoSpawn()
     {
         float p = (float)vidaActual / vidaMaxima;
         if (p <= 0.3f) return spawnFase2;
@@ -57,50 +108,71 @@ public class HornoController : MonoBehaviourPun, IPunObservable
         return spawnFase0;
     }
 
-    int GetCantidadActual()
-    {
-        float p = (float)vidaActual / vidaMaxima;
-        return p <= 0.3f ? cantidadFase2 : cantidadFase0;
-    }
-
     void SpawnEnemigo()
     {
         if (destruido) return;
         float x = Random.Range(spawnOffsetMin.x, spawnOffsetMax.x);
         float y = Random.Range(spawnOffsetMin.y, spawnOffsetMax.y);
-        PhotonNetwork.Instantiate(prefabEnemigo,
-            transform.position + new Vector3(x, y, 0), Quaternion.identity);
+        Vector3 pos = transform.position + new Vector3(x, y, 0f);
+        PhotonNetwork.Instantiate(prefabEnemigo, pos, Quaternion.identity);
     }
 
-    // ---- RECIBIR DAÑO ----
+    // ─────────────────────────────────────────
+    // RECIBIR DAÑO
+    // ─────────────────────────────────────────
     [PunRPC]
     public void RPC_RecibirDanioHorno(int danio)
     {
         if (destruido) return;
 
-        vidaActual = Mathf.Clamp(vidaActual - danio, 0, vidaMaxima);
-        ActualizarAnimacion();
+        // Si está cerrado, no recibe daño
+        if (!estaAbierto)
+        {
+            Debug.Log("Horno cerrado. Sin daño.");
+            return;
+        }
 
-        if (vidaActual <= 0) Morir();
+        vidaActual = Mathf.Clamp(vidaActual - danio, 0, vidaMaxima);
+        Debug.Log("Horno golpeado. Vida: " + vidaActual);
+
+        ActualizarFaseAnimacion();
+        ActualizarHUD();
+
+        if (vidaActual <= 0)
+            Morir();
     }
 
-    void ActualizarAnimacion()
+    // ─────────────────────────────────────────
+    // FASES DE DAÑO (animación)
+    // ─────────────────────────────────────────
+    void ActualizarFaseAnimacion()
     {
         if (anim == null) return;
+
         float p = (float)vidaActual / vidaMaxima;
         int fase = 0;
-        if      (p <= 0.3f) fase = 2;
+        if (p <= 0.3f) fase = 2;
         else if (p <= 0.6f) fase = 1;
+
         anim.SetInteger("fase", fase);
     }
 
+    // ─────────────────────────────────────────
+    // MUERTE
+    // ─────────────────────────────────────────
     void Morir()
     {
         destruido = true;
-        if (anim != null) anim.SetTrigger("destruido");
-        if (rutina != null) StopCoroutine(rutina);
 
-        Debug.Log("¡HORNO DESTRUIDO! Los enemigos dejan de aparecer.");
+        if (rutinaApertura != null) StopCoroutine(rutinaApertura);
+        if (rutinaSpawn != null) StopCoroutine(rutinaSpawn);
+
+        if (anim != null) anim.SetTrigger("destruido");
+
+        if (HUD_Jefe_Sprites.Instance != null)
+            HUD_Jefe_Sprites.Instance.OcultarHUD();
+
+        Debug.Log("¡HORNO DESTRUIDO!");
 
         if (PhotonNetwork.IsMasterClient)
             StartCoroutine(DestruirDespues(2f));
@@ -112,14 +184,36 @@ public class HornoController : MonoBehaviourPun, IPunObservable
         PhotonNetwork.Destroy(gameObject);
     }
 
-    // ---- SINCRONIZACIÓN ----
+    // ─────────────────────────────────────────
+    // HUD
+    // ─────────────────────────────────────────
+    void ActualizarHUD()
+    {
+        if (HUD_Jefe_Sprites.Instance != null)
+            HUD_Jefe_Sprites.Instance.SetVida(vidaActual, vidaMaxima);
+    }
+
+    // ─────────────────────────────────────────
+    // SINCRONIZACIÓN PHOTON
+    // ─────────────────────────────────────────
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        if (stream.IsWriting) stream.SendNext(vidaActual);
+        if (stream.IsWriting)
+        {
+            stream.SendNext(vidaActual);
+            stream.SendNext(estaAbierto);
+            stream.SendNext(destruido);
+        }
         else
         {
             vidaActual = (int)stream.ReceiveNext();
-            ActualizarAnimacion(); // El cliente 2 también actualiza su animación
+            estaAbierto = (bool)stream.ReceiveNext();
+            destruido = (bool)stream.ReceiveNext();
+
+            ActualizarFaseAnimacion();
+
+            if (anim != null)
+                anim.SetBool("abierto", estaAbierto);
         }
     }
 }

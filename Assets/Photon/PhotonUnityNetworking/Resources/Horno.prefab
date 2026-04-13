@@ -30,7 +30,7 @@ Transform:
   m_GameObject: {fileID: 5166246889926512653}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.19, y: 1.4252, z: 0.040017284}
+  m_LocalPosition: {x: -2.19, y: -0.98, z: 0.040017284}
   m_LocalScale: {x: 0.30399263, y: 0.30399263, z: 0.30399263}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -77,7 +77,7 @@ SpriteRenderer:
   m_SortingLayerID: 1876196211
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1003319611, guid: fd42b6f04a8b8ef4daac5bebe298ffd6, type: 3}
+  m_Sprite: {fileID: -1720688698, guid: c66719a8268f1804a94e73b4934716a6, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -123,14 +123,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vidaMaxima: 200
   vidaActual: 0
+  cerradoMin: 2
+  cerradoMax: 5
+  abiertoMin: 1.5
+  abiertoMax: 3
   prefabEnemigo: Enemigo
-  spawnOffsetMin: {x: -1.5, y: -1.2}
-  spawnOffsetMax: {x: 1.5, y: -0.6}
   spawnFase0: 5
   spawnFase1: 3
   spawnFase2: 1.5
-  cantidadFase0: 1
-  cantidadFase2: 2
+  spawnOffsetMin: {x: -1.5, y: -1.2}
+  spawnOffsetMax: {x: 1.5, y: -0.6}
 --- !u!114 &332230656903599974
 MonoBehaviour:
   m_ObjectHideFlags: 0
