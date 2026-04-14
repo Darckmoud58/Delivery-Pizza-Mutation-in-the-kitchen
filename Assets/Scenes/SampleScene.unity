@@ -485,7 +485,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &474458099
 RectTransform:
   m_ObjectHideFlags: 0
@@ -503,8 +503,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 35.746, y: 28.549}
-  m_SizeDelta: {x: 1248, y: 696}
+  m_AnchoredPosition: {x: 35.746, y: -48.855}
+  m_SizeDelta: {x: 1248, y: 850.809}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &474458100
 MonoBehaviour:
@@ -526,7 +526,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: aae94e0efd952314e95c0421fc3eb20a, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 83f3dc139b5a7ef4fba0c08d97949a84, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -787,7 +787,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.14, y: 0, z: -10}
+  m_LocalPosition: {x: -0.47, y: 0, z: -10}
   m_LocalScale: {x: 5.28, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1981,8 +1981,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00040817, y: 30.85}
-  m_SizeDelta: {x: 1248, y: 1174.062}
+  m_AnchoredPosition: {x: -0.00006485, y: -0.0012321}
+  m_SizeDelta: {x: 1248, y: 850.81}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1045202822
 MonoBehaviour:
@@ -2004,12 +2004,12 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 201a2ec096dbece47839424846a6c904, type: 3}
+  m_Sprite: {fileID: 21300000, guid: cd33631b1208bc9448af91b51fa4ee98, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 1
+  m_FillAmount: 0.364
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
@@ -2283,11 +2283,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   imagenBarra: {fileID: 1045202822}
-  spriteVerde: {fileID: 21300000, guid: 201a2ec096dbece47839424846a6c904, type: 3}
-  spriteNaranja: {fileID: 21300000, guid: 96e4ceb3eb5125240ad403cba33cb6e7, type: 3}
-  spriteRojo: {fileID: 21300000, guid: a8457d5c529e7cb4783e7a3880011044, type: 3}
+  spriteVerde: {fileID: 21300000, guid: cd33631b1208bc9448af91b51fa4ee98, type: 3}
+  spriteNaranja: {fileID: 21300000, guid: a4bd9c326425fbc46b011e908be940ca, type: 3}
+  spriteRojo: {fileID: 21300000, guid: 027cd7c2caad4e74b980ba31da0599e9, type: 3}
   iconLock: {fileID: 0}
-  colorNormal: {r: 1, g: 1, b: 1, a: 1}
+  colorNormal: {r: 1, g: 1, b: 1, a: 0.2901961}
   colorInvulnerable: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   velocidadSuavizado: 5
   sacudirIntensidad: 5

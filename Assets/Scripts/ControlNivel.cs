@@ -19,11 +19,15 @@ public class ControlNivel : NetworkBehaviour
     [Header("Pared invisible entre zonas")]
     public GameObject[] paredes;
 
+    [Header("Configuración de Jefe")]
+    [Tooltip("Índice de la pared que al desactivarse debe abrir el horno (hacerlo vulnerable)")]
+    public int indiceParedJefe = -1;
+
+    // referencia al horno instanciado (server)
+    GameObject hornoInstanciado;
+
     private int zonaActual = 0;
     private bool jefeLanzado = false;
-
-    public int indiceParedJefe = -1; // arrástralo en el inspector al índice de la pared que protege el horno
-    GameObject hornoInstanciado; // campo de clase
 
     void Awake()
     {
@@ -61,15 +65,29 @@ public class ControlNivel : NetworkBehaviour
     {
         yield return new WaitForSeconds(1.5f);
 
-        if (zonaActual < paredes.Length && paredes[zonaActual] != null)
+        // Guardamos el índice de la pared que vamos a desactivar (zonaActual actual)
+        int paredIndex = zonaActual;
+
+        if (paredIndex < paredes.Length && paredes[paredIndex] != null)
         {
-            Collider2D col = paredes[zonaActual].GetComponent<Collider2D>();
+            Collider2D col = paredes[paredIndex].GetComponent<Collider2D>();
             if (col != null) col.enabled = false;
 
-            paredes[zonaActual].SetActive(false);
-            RpcDesactivarPared(zonaActual);
+            paredes[paredIndex].SetActive(false);
+            RpcDesactivarPared(paredIndex);
 
-            Debug.Log("Pared " + zonaActual + " eliminada");
+            Debug.Log("Pared " + paredIndex + " eliminada");
+
+            // Si esa pared es la que protege al jefe, y ya tenemos instanciado el horno, lo abrimos (server)
+            if (paredIndex == indiceParedJefe && hornoInstanciado != null)
+            {
+                HornoController hc = hornoInstanciado.GetComponent<HornoController>();
+                if (hc != null)
+                {
+                    Debug.Log("ControlNivel: se abrió la pared del jefe. Llamando AbrirHornoServidor()");
+                    hc.AbrirHornoServidor();
+                }
+            }
         }
 
         zonaActual++;
@@ -103,9 +121,10 @@ public class ControlNivel : NetworkBehaviour
             hornoInstanciado = go;
             Debug.Log("¡JEFE LANZADO!");
 
-            // NO vulnerable inicialmente hasta que se abra la puerta (opcional)
-            HornoController hc = go.GetComponent<HornoController>();
-            if (hc != null) hc.SetVulnerable(false);
+            // Dejar el horno inicialmente cerrado/invulnerable.
+            // El horno se abrirá cuando se desactive la pared indicada (indiceParedJefe)
+            // Si prefieres abrirlo inmediatamente al spawnear, descomenta la siguiente línea:
+            // HornoController hc = go.GetComponent<HornoController>(); if (hc != null) hc.AbrirHornoServidor();
         }
         else
         {
@@ -129,16 +148,6 @@ public class ControlNivel : NetworkBehaviour
             if (col != null) col.enabled = false;
 
             paredes[indice].SetActive(false);
-        }
-
-        if (indice == indiceParedJefe && hornoInstanciado != null)
-        {
-            HornoController hc = hornoInstanciado.GetComponent<HornoController>();
-            if (hc != null)
-            {
-                hc.SetVulnerable(true);
-                Debug.Log("Se abrió la puerta del horno: ahora es vulnerable (server).");
-            }
         }
     }
 }

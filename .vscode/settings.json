@@ -56,5 +56,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Delivery Pizza - Mutation in the kitchen.sln"
+    "dotnet.defaultSolution": "Delivery Pizza - Mutation in the kitchen.sln",
+    "dotnet.preferCSharpExtension": true
 }

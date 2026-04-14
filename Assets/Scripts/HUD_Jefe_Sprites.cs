@@ -49,15 +49,12 @@ public class HUD_Jefe_Sprites : MonoBehaviour
     void Update()
     {
         if (imagenBarra == null) return;
+
+        // Esto hace que el Fill Amount actual persiga al 'vidaObjetivo' suavemente
         imagenBarra.fillAmount = Mathf.Lerp(imagenBarra.fillAmount, vidaObjetivo, Time.deltaTime * velocidadSuavizado);
+
+        // Cambiar color/sprite de la barra según el llenado actual
         ActualizarSprite(imagenBarra.fillAmount);
-
-        // Aplica color por invulnerabilidad
-        if (imagenBarra != null)
-            imagenBarra.color = invulnerable ? colorInvulnerable : colorNormal;
-
-        if (iconLock != null)
-            iconLock.gameObject.SetActive(invulnerable);
     }
 
     public void SetVida(int vidaActual, int vidaMax)

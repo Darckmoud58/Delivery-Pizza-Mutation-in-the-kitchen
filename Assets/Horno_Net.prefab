@@ -131,6 +131,21 @@ MonoBehaviour:
   tiempoEntreSpawns: 4
   radioSpawn: 1.5
   generarEnemigos: 1
+  spawnCount: 1
+  spawnCountIntenso: 2
+  animator: {fileID: 9180741308266390255}
+  paramIsOpen: abierto
+  stateHitName: "Horno_Da\xF1ado"
+  stateClosedName: Horno_Cerrado
+  stateOpenName: Horno_Abierto
+  stateIdleName: Horno_Idle
+  stateDestroyedName: Horno_Destruido
+  openWindowDuration: 5
+  closeCooldown: 3
+  autoCycle: 1
+  puedeIntensificar: 1
+  intensidadSpawnMultiplier: 0.6
+  vulnerable: 0
 --- !u!114 &2951859765636177776
 MonoBehaviour:
   m_ObjectHideFlags: 0
