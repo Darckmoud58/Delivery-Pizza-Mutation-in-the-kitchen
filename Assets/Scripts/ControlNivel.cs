@@ -1,9 +1,8 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
+using FishNet.Object;
 
-public class ControlNivel : MonoBehaviourPun
+public class ControlNivel : NetworkBehaviour
 {
     public static ControlNivel Instance;
 
@@ -11,7 +10,7 @@ public class ControlNivel : MonoBehaviourPun
     public WaveZone[] zonas;
 
     [Header("Jefe Final")]
-    public string prefabHorno = "Horno";
+    public GameObject prefabHorno;
     public Transform spawnHorno;
 
     [Header("Pala / Flecha avanzar")]
@@ -23,25 +22,38 @@ public class ControlNivel : MonoBehaviourPun
     private int zonaActual = 0;
     private bool jefeLanzado = false;
 
-    void Awake() { Instance = this; }
+    public int indiceParedJefe = -1; // arrástralo en el inspector al índice de la pared que protege el horno
+    GameObject hornoInstanciado; // campo de clase
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
         if (palaGuia != null) palaGuia.SetActive(false);
-        foreach (var p in paredes) if (p != null) p.SetActive(true);
-        // NO iniciamos zona aquí — el trigger OnTriggerEnter2D del WaveZone lo hace
+
+        foreach (GameObject p in paredes)
+            if (p != null) p.SetActive(true);
     }
 
     public void EntrarZona(int indice)
     {
         if (indice != zonaActual) return;
+
         if (palaGuia != null) palaGuia.SetActive(false);
+        RpcMostrarPala(false);
+
         Debug.Log("Iniciando zona " + indice);
-        zonas[indice].IniciarZona();
+
+        if (zonas != null && indice >= 0 && indice < zonas.Length && zonas[indice] != null)
+            zonas[indice].IniciarZona();
     }
 
     public void ZonaCompletada()
     {
+        if (!IsServerInitialized) return;
         StartCoroutine(SiguientePasoCo());
     }
 
@@ -49,12 +61,14 @@ public class ControlNivel : MonoBehaviourPun
     {
         yield return new WaitForSeconds(1.5f);
 
-        // Quitar pared de la zona actual
         if (zonaActual < paredes.Length && paredes[zonaActual] != null)
         {
             Collider2D col = paredes[zonaActual].GetComponent<Collider2D>();
-            if (col != null) Destroy(col);
+            if (col != null) col.enabled = false;
+
             paredes[zonaActual].SetActive(false);
+            RpcDesactivarPared(zonaActual);
+
             Debug.Log("Pared " + zonaActual + " eliminada");
         }
 
@@ -63,12 +77,11 @@ public class ControlNivel : MonoBehaviourPun
 
         if (zonaActual < zonas.Length)
         {
-            // Hay más zonas — mostrar pala para avanzar
             if (palaGuia != null) palaGuia.SetActive(true);
+            RpcMostrarPala(true);
         }
         else
         {
-            // Todas las zonas limpias → jefe
             Debug.Log("Todas las zonas completadas, lanzando jefe en 2s...");
             yield return new WaitForSeconds(2f);
             LanzarJefe();
@@ -77,14 +90,55 @@ public class ControlNivel : MonoBehaviourPun
 
     void LanzarJefe()
     {
-        if (jefeLanzado) return;
+        if (!IsServerInitialized || jefeLanzado) return;
         jefeLanzado = true;
-        if (palaGuia != null) palaGuia.SetActive(false);
 
-        if (PhotonNetwork.IsMasterClient && spawnHorno != null && PhotonNetwork.IsConnectedAndReady)
+        if (palaGuia != null) palaGuia.SetActive(false);
+        RpcMostrarPala(false);
+
+        if (prefabHorno != null && spawnHorno != null)
         {
-            PhotonNetwork.Instantiate(prefabHorno, spawnHorno.position, Quaternion.identity);
+            GameObject go = Instantiate(prefabHorno, spawnHorno.position, Quaternion.identity);
+            ServerManager.Spawn(go);
+            hornoInstanciado = go;
             Debug.Log("¡JEFE LANZADO!");
+
+            // NO vulnerable inicialmente hasta que se abra la puerta (opcional)
+            HornoController hc = go.GetComponent<HornoController>();
+            if (hc != null) hc.SetVulnerable(false);
+        }
+        else
+        {
+            Debug.LogError("Falta prefabHorno o spawnHorno en ControlNivel.");
+        }
+    }
+
+    [ObserversRpc]
+    void RpcMostrarPala(bool estado)
+    {
+        if (palaGuia != null)
+            palaGuia.SetActive(estado);
+    }
+
+    [ObserversRpc]
+    void RpcDesactivarPared(int indice)
+    {
+        if (indice >= 0 && indice < paredes.Length && paredes[indice] != null)
+        {
+            Collider2D col = paredes[indice].GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+
+            paredes[indice].SetActive(false);
+        }
+
+        if (indice == indiceParedJefe && hornoInstanciado != null)
+        {
+            HornoController hc = hornoInstanciado.GetComponent<HornoController>();
+            if (hc != null)
+            {
+                hc.SetVulnerable(true);
+                Debug.Log("Se abrió la puerta del horno: ahora es vulnerable (server).");
+            }
         }
     }
 }

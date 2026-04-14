@@ -1,13 +1,12 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Photon.Pun;
+using FishNet.Object;
 
-public class WaveZone : MonoBehaviourPun
+public class WaveZone : NetworkBehaviour
 {
     [Header("Configuración")]
     public int indiceZona = 0;
-    public string enemigoPrefab = "Enemigo";
+    public GameObject enemigoPrefab;
 
     [Header("Oleadas")]
     public int[] enemigosXOleada = { 2, 2 };
@@ -22,25 +21,36 @@ public class WaveZone : MonoBehaviourPun
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (!other.CompareTag("Player")) return;
+        if (other.GetComponent<LogicaJugadorRed>() == null) return;
         if (ControlNivel.Instance == null) return;
+
         ControlNivel.Instance.EntrarZona(indiceZona);
     }
 
     public void IniciarZona()
     {
         if (iniciado || completada) return;
+
         iniciado = true;
-        if (PhotonNetwork.IsMasterClient)
+
+        if (IsServerInitialized)
             StartCoroutine(LanzarOleada());
     }
 
     IEnumerator LanzarOleada()
     {
-        if (oleadaActual >= enemigosXOleada.Length) yield break;
+        if (enemigoPrefab == null)
+        {
+            Debug.LogError("WaveZone: no asignaste enemigoPrefab en la zona " + indiceZona);
+            yield break;
+        }
+
+        if (oleadaActual >= enemigosXOleada.Length)
+            yield break;
 
         int cantidad = enemigosXOleada[oleadaActual];
         enemigosVivos = cantidad;
+
         Debug.Log("Zona " + indiceZona + " - Oleada " + (oleadaActual + 1) + ": " + cantidad + " enemigos");
 
         for (int i = 0; i < cantidad; i++)
@@ -49,9 +59,12 @@ public class WaveZone : MonoBehaviourPun
                 ? puntoSpawn.position + new Vector3(Random.Range(-1f, 1f), 0f, 0f)
                 : transform.position;
 
-            GameObject go = PhotonNetwork.Instantiate(enemigoPrefab, pos, Quaternion.identity);
+            GameObject go = Instantiate(enemigoPrefab, pos, Quaternion.identity);
             IAEnemigoRed ia = go.GetComponent<IAEnemigoRed>();
-            if (ia != null) ia.indiceZonaOrigen = indiceZona;
+            if (ia != null)
+                ia.indiceZonaOrigen = indiceZona;
+
+            ServerManager.Spawn(go);
 
             yield return new WaitForSeconds(1.5f);
         }
@@ -59,7 +72,7 @@ public class WaveZone : MonoBehaviourPun
 
     public void EnemigoMuerto()
     {
-        if (!PhotonNetwork.IsMasterClient) return;
+        if (!IsServerInitialized) return;
 
         enemigosVivos--;
         Debug.Log("Zona " + indiceZona + " | Enemigos vivos: " + enemigosVivos);
@@ -67,6 +80,7 @@ public class WaveZone : MonoBehaviourPun
         if (enemigosVivos <= 0)
         {
             oleadaActual++;
+
             if (oleadaActual < enemigosXOleada.Length)
                 StartCoroutine(EsperarSiguienteOleada());
             else
@@ -83,10 +97,10 @@ public class WaveZone : MonoBehaviourPun
     void ZonaTerminada()
     {
         if (completada) return;
+
         completada = true;
         Debug.Log("¡Zona " + indiceZona + " completada!");
 
-        // Sin RPC — directo. ControlNivel existe en todos los clientes.
         if (ControlNivel.Instance != null)
             ControlNivel.Instance.ZonaCompletada();
     }

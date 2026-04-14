@@ -174,12 +174,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60b8583e4758fd84691f62cfdc2fa03f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 0
+  _addedNetworkObject: {fileID: 6713736904824390241}
+  _networkObjectCache: {fileID: 6713736904824390241}
   velocidad: 3
-  distanciaDeteccion: 10
-  distanciaAtaque: 1.2
   vida: 30
-  danioAlJugador: 5
-  cooldownAtaque: 1.5
+  danio: 10
+  distanciaAtaque: 1.2
+  tiempoEntreAtaques: 1.2
   indiceZonaOrigen: -1
 --- !u!95 &5796027638886572736
 Animator:
@@ -220,7 +222,9 @@ MonoBehaviour:
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
-  NetworkBehaviours: []
+  NetworkBehaviours:
+  - {fileID: 865635500103242529}
+  - {fileID: 7229611293358512419}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -231,7 +235,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: 0
+  _initializedTimestamp: -8584254688541082197
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1
@@ -250,15 +254,15 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 65535
+  <PrefabId>k__BackingField: 10
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 12399047006114532172
   SceneId: 0
   SerializedTransformProperties:
-    Position: {x: 0, y: 0, z: 0}
-    Rotation: {x: 0, y: 0, z: 0, w: 0}
-    Scale: {x: 0, y: 0, z: 0}
-    IsValid: 0
+    Position: {x: -0.78225, y: 0.81162, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 1}
+    Scale: {x: 0.21705101, y: 0.21705101, z: 0.21705101}
+    IsValid: 1
 --- !u!114 &7229611293358512419
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -271,9 +275,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: 6713736904824390241}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 6713736904824390241}
   _componentConfiguration: 0
   _synchronizeParent: 0
   _packing:

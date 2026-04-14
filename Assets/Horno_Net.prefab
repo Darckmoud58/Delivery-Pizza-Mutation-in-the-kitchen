@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 188381181438614797}
   - component: {fileID: 2951859765636177776}
   - component: {fileID: 6584433528396589841}
+  - component: {fileID: 6811675853509758274}
   m_Layer: 0
   m_Name: Horno_Net
   m_TagString: Horno
@@ -77,7 +78,7 @@ SpriteRenderer:
   m_SortingLayerID: 1876196211
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1720688698, guid: c66719a8268f1804a94e73b4934716a6, type: 3}
+  m_Sprite: {fileID: -1003319611, guid: fd42b6f04a8b8ef4daac5bebe298ffd6, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -121,18 +122,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be46e47a856b54a4fabbca7fc11a6f9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 0
+  _addedNetworkObject: {fileID: 2951859765636177776}
+  _networkObjectCache: {fileID: 2951859765636177776}
   vidaMaxima: 200
-  vidaActual: 0
-  cerradoMin: 2
-  cerradoMax: 10
-  abiertoMin: 1.5
-  abiertoMax: 5
-  prefabEnemigo: Enemigo
-  spawnFase0: 5
-  spawnFase1: 3
-  spawnFase2: 1.5
-  spawnOffsetMin: {x: -1.5, y: -1.2}
-  spawnOffsetMax: {x: 1.5, y: -0.6}
+  vidaActual: 200
+  prefabEnemigo: {fileID: 401750833777732673, guid: 6c0a80162a7c68b408ee782c754db6ee, type: 3}
+  tiempoEntreSpawns: 4
+  radioSpawn: 1.5
+  generarEnemigos: 1
 --- !u!114 &2951859765636177776
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,7 +149,9 @@ MonoBehaviour:
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
-  NetworkBehaviours: []
+  NetworkBehaviours:
+  - {fileID: 188381181438614797}
+  - {fileID: 6584433528396589841}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -162,7 +162,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: 0
+  _initializedTimestamp: -8584254648011467376
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1
@@ -181,15 +181,15 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 65535
+  <PrefabId>k__BackingField: 0
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 2175993366969961196
   SceneId: 0
   SerializedTransformProperties:
-    Position: {x: 0, y: 0, z: 0}
-    Rotation: {x: 0, y: 0, z: 0, w: 0}
-    Scale: {x: 0, y: 0, z: 0}
-    IsValid: 0
+    Position: {x: -2.19, y: -2.08, z: 0.040017284}
+    Rotation: {x: 0, y: 0, z: 0, w: 1}
+    Scale: {x: 0.30399263, y: 0.30399263, z: 0.30399263}
+    IsValid: 1
 --- !u!114 &6584433528396589841
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -202,9 +202,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: 2951859765636177776}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 2951859765636177776}
   _componentConfiguration: 0
   _synchronizeParent: 0
   _packing:
@@ -236,3 +236,48 @@ MonoBehaviour:
     X: 0
     Y: 0
     Z: 0
+--- !u!61 &6811675853509758274
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5166246889926512653}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: -0.018174648, y: -1.3030863}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 13.53, y: 12.88}
+    newSize: {x: 13.53, y: 12.88}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 13.639043, y: 10.494104}
+  m_EdgeRadius: 0

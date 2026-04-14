@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6281380349461794140}
   - component: {fileID: 8554916119522040445}
   - component: {fileID: 3929838061083130094}
+  - component: {fileID: -7381006912365200675}
   m_Layer: 7
   m_Name: Chef_Net
   m_TagString: Player
@@ -32,7 +33,7 @@ Transform:
   m_GameObject: {fileID: 1595574895518577618}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.0018772, y: -0.04, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.28690082, y: 0.254537, z: 0.28690082}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -174,17 +175,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dc27b0783a3bae458a23084f1496971, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocidad: 6
+  _componentIndexCache: 0
+  _addedNetworkObject: {fileID: 8554916119522040445}
+  _networkObjectCache: {fileID: 8554916119522040445}
+  velocidad: 8
   vidaMax: 100
   vida: 100
   fuerzaAtaque: 10
   radioAtaque: 1.2
   offsetAtaque: {x: 0.8, y: 0}
-  xMin: -9
-  xMax: 999
-  yMin: -4.5
-  yMax: -0.5
-  teclaAtaque: 106
+  tiempoGolpe: 0.15
+  duracionAtaque: 0.35
+  cooldownAtaque: 0.45
 --- !u!95 &6281380349461794140
 Animator:
   serializedVersion: 5
@@ -224,7 +226,9 @@ MonoBehaviour:
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
-  NetworkBehaviours: []
+  NetworkBehaviours:
+  - {fileID: -7607795559027000565}
+  - {fileID: 3929838061083130094}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -235,7 +239,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: 0
+  _initializedTimestamp: -8584254661786744104
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1
@@ -254,15 +258,15 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 65535
+  <PrefabId>k__BackingField: 6
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 7789925129501779098
   SceneId: 0
   SerializedTransformProperties:
     Position: {x: 0, y: 0, z: 0}
-    Rotation: {x: 0, y: 0, z: 0, w: 0}
-    Scale: {x: 0, y: 0, z: 0}
-    IsValid: 0
+    Rotation: {x: 0, y: 0, z: 0, w: 1}
+    Scale: {x: 0.28690082, y: 0.254537, z: 0.28690082}
+    IsValid: 1
 --- !u!114 &3929838061083130094
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,9 +279,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: 8554916119522040445}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 8554916119522040445}
   _componentConfiguration: 0
   _synchronizeParent: 0
   _packing:
@@ -309,3 +313,18 @@ MonoBehaviour:
     X: 0
     Y: 0
     Z: 0
+--- !u!114 &-7381006912365200675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1595574895518577618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a62f67a41d93fb468f35076ac13777a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: 0}
+  _networkObjectCache: {fileID: 0}

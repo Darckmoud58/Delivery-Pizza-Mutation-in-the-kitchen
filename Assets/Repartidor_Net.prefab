@@ -174,17 +174,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dc27b0783a3bae458a23084f1496971, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _componentIndexCache: 0
+  _addedNetworkObject: {fileID: 7850498961733177638}
+  _networkObjectCache: {fileID: 7850498961733177638}
   velocidad: 6
   vidaMax: 100
   vida: 100
   fuerzaAtaque: 10
   radioAtaque: 1.2
   offsetAtaque: {x: 0.8, y: 0}
-  xMin: -9
-  xMax: 999
-  yMin: -4.5
-  yMax: -0.5
-  teclaAtaque: 106
+  tiempoGolpe: 0.15
+  duracionAtaque: 0.35
+  cooldownAtaque: 0.45
 --- !u!95 &5735120342242511762
 Animator:
   serializedVersion: 5
@@ -224,7 +225,9 @@ MonoBehaviour:
   <ComponentIndex>k__BackingField: 0
   <PredictedSpawn>k__BackingField: {fileID: 0}
   <PredictedOwner>k__BackingField: {fileID: 0}
-  NetworkBehaviours: []
+  NetworkBehaviours:
+  - {fileID: 8008266300552688598}
+  - {fileID: 8907487251191828215}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -235,7 +238,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: 0
+  _initializedTimestamp: -8584254688541082197
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1
@@ -254,15 +257,15 @@ MonoBehaviour:
   _spectatorInterpolation: 2
   _enableTeleport: 0
   _teleportThreshold: 1
-  <PrefabId>k__BackingField: 65535
+  <PrefabId>k__BackingField: 9
   <SpawnableCollectionId>k__BackingField: 0
   <AssetPathHash>k__BackingField: 10116983642697002802
   SceneId: 0
   SerializedTransformProperties:
-    Position: {x: 0, y: 0, z: 0}
-    Rotation: {x: 0, y: 0, z: 0, w: 0}
-    Scale: {x: 0, y: 0, z: 0}
-    IsValid: 0
+    Position: {x: 0.015114, y: -0.0061761, z: 0}
+    Rotation: {x: 0, y: 0, z: 0, w: 1}
+    Scale: {x: 2.0296023, y: 3.0444036, z: 2.0296023}
+    IsValid: 1
 --- !u!114 &8907487251191828215
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,9 +278,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2836e36774ca1c4bbbee976e17b649c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: 7850498961733177638}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: 7850498961733177638}
   _componentConfiguration: 0
   _synchronizeParent: 0
   _packing:
