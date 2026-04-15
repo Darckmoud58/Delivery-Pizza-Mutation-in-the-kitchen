@@ -15,7 +15,10 @@ public class ControlNivel : NetworkBehaviour
     public Transform spawnHorno;
 
     [Header("Pala / Flecha avanzar")]
-    public GameObject palaGuia;
+    [Tooltip("Prefab local de la pala que cada cliente instanciará")]
+    public GameObject palaPrefab;
+    // instancia local creada en OnStartClient (no networked)
+    GameObject palaGuiaInstance;
 
     [Header("Pared invisible entre zonas")]
     public GameObject[] paredes;
@@ -35,9 +38,35 @@ public class ControlNivel : NetworkBehaviour
         Instance = this;
     }
 
+    // Inicialización en cliente: instanciamos la pala local si hay prefab
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+
+        if (palaPrefab != null && palaGuiaInstance == null)
+        {
+            // Crear instancia local (visual) para cada cliente
+            palaGuiaInstance = Instantiate(palaPrefab);
+            palaGuiaInstance.name = "Pala_Guia_Instance";
+            palaGuiaInstance.SetActive(false); // empieza oculta hasta que el servidor la pida
+
+            // organización opcional
+            palaGuiaInstance.transform.SetParent(this.transform, true);
+
+            // asegurar que se renderiza por encima
+            var sr = palaGuiaInstance.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.sortingOrder = 100;
+
+            Debug.Log("[ControlNivel][Client] Pala instanciada localmente.");
+        }
+    }
+
     void Start()
     {
-        if (palaGuia != null) palaGuia.SetActive(false);
+        // Si por alguna razón se arrastra manualmente una instancia en escena
+        // (backwards compatibility), mantenemos el comportamiento:
+        if (palaGuiaInstance == null && palaPrefab == null && palaGuiaInstance != null)
+            palaGuiaInstance.SetActive(false);
 
         foreach (GameObject p in paredes)
             if (p != null) p.SetActive(true);
@@ -47,7 +76,8 @@ public class ControlNivel : NetworkBehaviour
     {
         if (indice != zonaActual) return;
 
-        if (palaGuia != null) palaGuia.SetActive(false);
+        // ocultar pala mientras la zona inicia
+        if (palaGuiaInstance != null) palaGuiaInstance.SetActive(false);
         RpcMostrarPala(false);
 
         Debug.Log("Iniciando zona " + indice);
@@ -96,7 +126,8 @@ public class ControlNivel : NetworkBehaviour
 
         if (zonaActual < zonas.Length)
         {
-            if (palaGuia != null) palaGuia.SetActive(true);
+            // Mostramos la pala en clientes (servidor pide a todos los observers)
+            if (palaGuiaInstance != null) palaGuiaInstance.SetActive(true);
             RpcMostrarPala(true);
         }
         else
@@ -112,7 +143,7 @@ public class ControlNivel : NetworkBehaviour
         if (!IsServerInitialized || jefeLanzado) return;
         jefeLanzado = true;
 
-        if (palaGuia != null) palaGuia.SetActive(false);
+        if (palaGuiaInstance != null) palaGuiaInstance.SetActive(false);
         RpcMostrarPala(false);
 
         if (prefabHorno != null && spawnHorno != null)
@@ -136,11 +167,13 @@ public class ControlNivel : NetworkBehaviour
         }
     }
 
+    // El ObserversRpc afectará a todos los clientes: usará la instancia local palaGuiaInstance
     [ObserversRpc]
     void RpcMostrarPala(bool estado)
     {
-        if (palaGuia != null)
-            palaGuia.SetActive(estado);
+        Debug.Log("[ControlNivel] RpcMostrarPala llamado con estado: " + estado);
+        if (palaGuiaInstance != null)
+            palaGuiaInstance.SetActive(estado);
     }
 
     [ObserversRpc]
@@ -152,6 +185,16 @@ public class ControlNivel : NetworkBehaviour
             if (col != null) col.enabled = false;
 
             paredes[indice].SetActive(false);
+        }
+
+        if (indice == indiceParedJefe && hornoInstanciado != null)
+        {
+            HornoController hc = hornoInstanciado.GetComponent<HornoController>();
+            if (hc != null)
+            {
+                hc.SetVulnerable(true);
+                Debug.Log("Se abrió la puerta del horno: ahora es vulnerable (server).");
+            }
         }
     }
 }
