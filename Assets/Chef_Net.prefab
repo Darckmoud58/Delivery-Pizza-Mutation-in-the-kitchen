@@ -33,8 +33,8 @@ Transform:
   m_GameObject: {fileID: 1595574895518577618}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.28690082, y: 0.254537, z: 0.28690082}
+  m_LocalPosition: {x: 0, y: -0.0017843, z: 0}
+  m_LocalScale: {x: 0.19307277, y: 0.1712932, z: 0.19307277}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -150,7 +150,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.17007536, y: -4.200721}
+  m_Offset: {x: -0.04639125, y: -4.950119}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -161,7 +161,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 3.3004236, y: 7.084297}
+  m_Size: {x: 2.249014, y: 5.027811}
   m_EdgeRadius: 0
 --- !u!114 &-7607795559027000565
 MonoBehaviour:
@@ -178,15 +178,15 @@ MonoBehaviour:
   _componentIndexCache: 0
   _addedNetworkObject: {fileID: 8554916119522040445}
   _networkObjectCache: {fileID: 8554916119522040445}
-  velocidad: 8
+  velocidad: 6.34
   vidaMax: 100
   vida: 100
   fuerzaAtaque: 10
-  radioAtaque: 1.2
-  offsetAtaque: {x: 0.8, y: 0}
-  tiempoGolpe: 0.15
-  duracionAtaque: 0.35
-  cooldownAtaque: 0.45
+  radioAtaque: 0.46
+  offsetAtaque: {x: 1.68, y: 0}
+  tiempoGolpe: 0.03
+  duracionAtaque: 0.19
+  cooldownAtaque: 0.08
 --- !u!95 &6281380349461794140
 Animator:
   serializedVersion: 5
@@ -229,6 +229,7 @@ MonoBehaviour:
   NetworkBehaviours:
   - {fileID: -7607795559027000565}
   - {fileID: 3929838061083130094}
+  - {fileID: -7381006912365200675}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -239,7 +240,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584254661786744104
+  _initializedTimestamp: -8584253822883535952
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1
@@ -263,9 +264,9 @@ MonoBehaviour:
   <AssetPathHash>k__BackingField: 7789925129501779098
   SceneId: 0
   SerializedTransformProperties:
-    Position: {x: 0, y: 0, z: 0}
+    Position: {x: 0, y: -0.0017843, z: 0}
     Rotation: {x: 0, y: 0, z: 0, w: 1}
-    Scale: {x: 0.28690082, y: 0.254537, z: 0.28690082}
+    Scale: {x: 0.19307277, y: 0.1712932, z: 0.19307277}
     IsValid: 1
 --- !u!114 &3929838061083130094
 MonoBehaviour:
@@ -325,6 +326,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a62f67a41d93fb468f35076ac13777a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
-  _addedNetworkObject: {fileID: 0}
-  _networkObjectCache: {fileID: 0}
+  _componentIndexCache: 2
+  _addedNetworkObject: {fileID: 8554916119522040445}
+  _networkObjectCache: {fileID: 8554916119522040445}

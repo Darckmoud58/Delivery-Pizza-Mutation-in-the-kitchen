@@ -135,13 +135,15 @@ MonoBehaviour:
   spawnCountIntenso: 2
   animator: {fileID: 9180741308266390255}
   paramIsOpen: abierto
+  triggerHit: hit
+  triggerDestroyed: destruido
   stateHitName: "Horno_Da\xF1ado"
   stateClosedName: Horno_Cerrado
   stateOpenName: Horno_Abierto
   stateIdleName: Horno_Idle
   stateDestroyedName: Horno_Destruido
-  openWindowDuration: 5
-  closeCooldown: 3
+  openWindowDuration: 8
+  closeCooldown: 20
   autoCycle: 1
   puedeIntensificar: 1
   intensidadSpawnMultiplier: 0.6
@@ -177,7 +179,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584254648011467376
+  _initializedTimestamp: -8584253851913200598
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1

@@ -1,3 +1,4 @@
+// Assets/Scripts/ControlNivel.cs
 using System.Collections;
 using UnityEngine;
 using FishNet.Object;
@@ -121,10 +122,13 @@ public class ControlNivel : NetworkBehaviour
             hornoInstanciado = go;
             Debug.Log("¡JEFE LANZADO!");
 
-            // Dejar el horno inicialmente cerrado/invulnerable.
-            // El horno se abrirá cuando se desactive la pared indicada (indiceParedJefe)
-            // Si prefieres abrirlo inmediatamente al spawnear, descomenta la siguiente línea:
-            // HornoController hc = go.GetComponent<HornoController>(); if (hc != null) hc.AbrirHornoServidor();
+            // Abrir inmediatamente (server)
+            HornoController hc = go.GetComponent<HornoController>();
+            if (hc != null)
+            {
+                Debug.Log("[ControlNivel] AbrirHornoServidor() inmediatamente tras spawn (prueba).");
+                hc.AbrirHornoServidor();
+            }
         }
         else
         {

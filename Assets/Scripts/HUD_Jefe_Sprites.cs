@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+// Assets/Scripts/HUD_Jefe_Sprites.cs
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,104 +7,124 @@ public class HUD_Jefe_Sprites : MonoBehaviour
     public static HUD_Jefe_Sprites Instance;
 
     [Header("Referencias UI")]
-    public Image imagenBarra;        // Image tipo Filled
+    [Tooltip("Panel/objeto que contiene la barra (marco + relleno). Debe estar desactivado por defecto.")]
+    public GameObject fondoBarra;
+
+    [Tooltip("Image del relleno (Image Type = Filled, Fill Method = Horizontal, Fill Origin = Left)")]
+    public Image imagenBarra;
+
+    [Header("Sprites por rangos")]
     public Sprite spriteVerde;
     public Sprite spriteNaranja;
     public Sprite spriteRojo;
 
-    // Nuevo: icono de bloqueo / invulnerable (opcional)
+    [Header("Opcionales")]
+    [Tooltip("Imagen que sirve de 'candado' o icono cuando está invulnerable (opcional).")]
     public Image iconLock;
+
+    [Tooltip("Color normal del relleno (por defecto blanco)")]
     public Color colorNormal = Color.white;
+
+    [Tooltip("Color cuando está invulnerable (ej. gris claro)")]
     public Color colorInvulnerable = new Color(0.6f, 0.6f, 0.6f, 1f);
 
-    [Header("Configuración")]
+    [Header("Suavizado")]
     public float velocidadSuavizado = 5f;
-    public float sacudirIntensidad = 5f;
-    public int sacudirVeces = 5;
 
-    float vidaObjetivo = 1f;
-    bool invulnerable = false;
+    // estado interno
+    float vidaObjetivo = 1f; // 0..1
+    bool esInvulnerableVis = false;
 
     void Awake()
     {
+        // Singleton simple
         if (Instance == null) Instance = this;
         else if (Instance != this) Destroy(gameObject);
 
-        if (imagenBarra == null)
-        {
-            imagenBarra = GetComponentInChildren<Image>();
-            if (imagenBarra == null) imagenBarra = GetComponent<Image>();
-        }
+        // Asegurar que la barra empieza oculta si hay un fondoBarra asignado
+        if (fondoBarra != null) fondoBarra.SetActive(false);
 
+        // Asegurar imagenBarra en estado inicial
         if (imagenBarra != null)
         {
             imagenBarra.type = Image.Type.Filled;
             imagenBarra.fillMethod = Image.FillMethod.Horizontal;
             imagenBarra.fillOrigin = (int)Image.OriginHorizontal.Left;
             imagenBarra.fillAmount = 1f;
+            imagenBarra.color = colorNormal;
         }
+
+        if (iconLock != null) iconLock.gameObject.SetActive(false);
     }
 
     void Update()
     {
         if (imagenBarra == null) return;
 
-        // Esto hace que el Fill Amount actual persiga al 'vidaObjetivo' suavemente
+        // suavizado del fill amount
         imagenBarra.fillAmount = Mathf.Lerp(imagenBarra.fillAmount, vidaObjetivo, Time.deltaTime * velocidadSuavizado);
 
-        // Cambiar color/sprite de la barra según el llenado actual
-        ActualizarSprite(imagenBarra.fillAmount);
+        // opcional: cambio de sprite según el porcentaje visual actual (puedes usar vidaObjetivo en su lugar)
+        ActualizarSpriteSegunPorcentaje(imagenBarra.fillAmount);
     }
 
+    void ActualizarSpriteSegunPorcentaje(float porcentaje)
+    {
+        if (imagenBarra == null) return;
+
+        // evita cambiar si no se asignaron sprites
+        if (spriteVerde == null && spriteNaranja == null && spriteRojo == null) return;
+
+        if (porcentaje > 0.66f && spriteVerde != null) imagenBarra.sprite = spriteVerde;
+        else if (porcentaje > 0.33f && spriteNaranja != null) imagenBarra.sprite = spriteNaranja;
+        else if (spriteRojo != null) imagenBarra.sprite = spriteRojo;
+    }
+
+    // --- Métodos públicos usados por HornoController ---
+
+    // Mostrar el HUD (activar el panel que contiene la barra)
+    public void MostrarHUD()
+    {
+        if (fondoBarra != null) fondoBarra.SetActive(true);
+        else Debug.LogWarning("[HUD_Jefe] MostrarHUD: fondoBarra no asignado.");
+    }
+
+    // Ocultar el HUD
+    public void OcultarHUD()
+    {
+        if (fondoBarra != null) fondoBarra.SetActive(false);
+        else Debug.LogWarning("[HUD_Jefe] OcultarHUD: fondoBarra no asignado.");
+    }
+
+    // Actualizar vida desde el servidor (valores absolutos)
     public void SetVida(int vidaActual, int vidaMax)
     {
-        if (vidaMax <= 0) vidaMax = 1;
-        vidaObjetivo = Mathf.Clamp01((float)vidaActual / (float)vidaMax);
+        if (vidaMax <= 0) return;
+        vidaObjetivo = Mathf.Clamp01((float)vidaActual / vidaMax);
 
-        if (!gameObject.activeSelf) gameObject.SetActive(true);
-        StartCoroutine(SacudirBarra());
+        // si la vida es 0 ocultamos HUD
+        if (vidaActual <= 0) OcultarHUD();
     }
 
-    void ActualizarSprite(float porcentaje)
+    // Mostrar/ocultar visual de invulnerable (HornoController llama con !v)
+    public void SetInvulnerable(bool invulnerable)
     {
-        if (spriteVerde == null || spriteNaranja == null || spriteRojo == null || imagenBarra == null) return;
+        esInvulnerableVis = invulnerable;
 
-        if (porcentaje > 0.6f)
-            imagenBarra.sprite = spriteVerde;
-        else if (porcentaje > 0.3f)
-            imagenBarra.sprite = spriteNaranja;
-        else
-            imagenBarra.sprite = spriteRojo;
-    }
-
-    IEnumerator SacudirBarra()
-    {
-        if (sacudirVeces <= 0 || sacudirIntensidad <= 0f) yield break;
-        RectTransform rt = transform as RectTransform;
-        if (rt == null) yield break;
-
-        Vector3 original = rt.localPosition;
-        for (int i = 0; i < sacudirVeces; i++)
+        if (imagenBarra != null)
         {
-            rt.localPosition = original + (Vector3)(Random.insideUnitCircle * sacudirIntensidad);
-            yield return new WaitForSeconds(0.03f);
+            imagenBarra.color = invulnerable ? colorInvulnerable : colorNormal;
         }
-        rt.localPosition = original;
+
+        if (iconLock != null)
+            iconLock.gameObject.SetActive(invulnerable);
     }
 
-    public void OcultarHUD() => gameObject.SetActive(false);
-    public void MostrarHUD() => gameObject.SetActive(true);
-
-    // Nuevo: cambia visual de invulnerabilidad
-    public void SetInvulnerable(bool estado)
+    // Helper (útil en Edición): forzar barra full
+    public void MostrarHUDFull()
     {
-        invulnerable = estado;
-        // si quieres además esconder la barra cuando invulnerable:
-        // imagenBarra.gameObject.SetActive(!estado);
-        if (estado)
-        {
-            // opcional: efecto visual
-            StartCoroutine(SacudirBarra());
-        }
+        MostrarHUD();
+        vidaObjetivo = 1f;
+        if (imagenBarra != null) imagenBarra.fillAmount = 1f;
     }
 }
