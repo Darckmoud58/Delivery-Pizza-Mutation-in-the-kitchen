@@ -19,7 +19,7 @@ public class MainMenuController : MonoBehaviour
     public GameObject heartsContainer;
 
     [Header("Network Settings")]
-    public int defaultPort = 7770; // FishNet usa 7770 por defecto en Tugboat
+    public int defaultPort = 7770; 
     private NetworkManager netManager;
 
     [Header("Panel Código Sala")]
@@ -42,7 +42,6 @@ public class MainMenuController : MonoBehaviour
         hostStarted = false;
     }
 
-    // --- HOST: Preparar sala ---
     public void OnHostPressed()
     {
         if (netManager == null) { SetStatus("NetworkManager no encontrado."); return; }
@@ -50,7 +49,6 @@ public class MainMenuController : MonoBehaviour
         string ip = GetLocalIPAddress();
         ushort actualPort = (ushort)defaultPort;
 
-        // Intentamos leer el puerto real del transporte
         if (netManager.TransportManager != null && netManager.TransportManager.Transport != null)
         {
             actualPort = netManager.TransportManager.Transport.GetPort();
@@ -61,11 +59,9 @@ public class MainMenuController : MonoBehaviour
 
         if (txtRoomCode != null) txtRoomCode.text = "IP: " + display;
 
-        if (panelCodigoSala != null)
-        {
-            panelCodigoSala.SetActive(true);
-            if (txtCodigoSala != null) txtCodigoSala.text = "IP de la sala:\n" + display;
-        }
+        // Mostrar Panel
+        if (panelCodigoSala != null) panelCodigoSala.SetActive(true);
+        if (txtCodigoSala != null) txtCodigoSala.text = "IP de la sala:\n" + display;
 
         if (panelCanvasGroup != null) 
         { 
@@ -81,7 +77,6 @@ public class MainMenuController : MonoBehaviour
         SetStatus("Sala preparada. IP copiada. Pulsa 'Iniciar partida' para arrancar.");
     }
 
-    // --- HOST: Iniciar realidad el servidor ---
     public void ConfirmStartHost()
     {
         if (netManager == null) return;
@@ -93,9 +88,12 @@ public class MainMenuController : MonoBehaviour
             netManager.ClientManager.StartConnection();
             hostStarted = true;
             
+            // --- LIMPIEZA TOTAL DE UI ---
             HideMenu();
+            if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
             if (heartsContainer != null) heartsContainer.SetActive(true);
-            SetStatus("Host iniciado. Esperando jugadores...");
+            
+            SetStatus("Host iniciado correctamente.");
         }
         catch (Exception ex)
         {
@@ -103,7 +101,6 @@ public class MainMenuController : MonoBehaviour
         }
     }
 
-    // --- CLIENTE: Unirse a una sala ---
     public void OnJoinPressed()
     {
         if (netManager == null) return;
@@ -120,7 +117,6 @@ public class MainMenuController : MonoBehaviour
         string targetIP = codeOrIp;
         string targetPort = defaultPort.ToString();
 
-        // Si el usuario puso IP:PUERTO
         if (codeOrIp.Contains(":"))
         {
             string[] parts = codeOrIp.Split(':');
@@ -128,12 +124,10 @@ public class MainMenuController : MonoBehaviour
             targetPort = parts[1];
         }
 
-        // --- CONFIGURACIÓN DEL TRANSPORTE ---
         ConfigureTransport(targetIP, targetPort);
-
-        // --- CONECTAR ---
         netManager.ClientManager.StartConnection();
 
+        // --- LIMPIEZA TOTAL DE UI ---
         HideMenu();
         if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
         if (heartsContainer != null) heartsContainer.SetActive(true);
@@ -144,10 +138,8 @@ public class MainMenuController : MonoBehaviour
     private void ConfigureTransport(string ip, string portText)
     {
         if (netManager.TransportManager == null || netManager.TransportManager.Transport == null) return;
-
         var transport = netManager.TransportManager.Transport;
 
-        // Caso Tugboat (Estándar de Fish-Net)
         if (transport is FishNet.Transporting.Tugboat.Tugboat tug)
         {
             tug.SetClientAddress(ip);
@@ -155,7 +147,6 @@ public class MainMenuController : MonoBehaviour
             return;
         }
 
-        // Caso Genérico por Reflection (por si usas otro)
         try
         {
             var type = transport.GetType();
@@ -165,11 +156,16 @@ public class MainMenuController : MonoBehaviour
             var portProp = type.GetProperty("Port");
             if (portProp != null && ushort.TryParse(portText, out ushort p)) portProp.SetValue(transport, p);
         }
-        catch (Exception e) { Debug.LogWarning("Error configurando transporte: " + e.Message); }
+        catch (Exception e) { Debug.LogWarning("Error transporte: " + e.Message); }
     }
 
-    // --- ÚTILES ---
-    void HideMenu() { if (menuRoot != null) menuRoot.SetActive(false); }
+    void HideMenu() 
+    { 
+        if (menuRoot != null) menuRoot.SetActive(false); 
+        // Si tienes el panel fuera del root, asegúrate de apagarlo también:
+        if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
+    }
+
     void SetStatus(string s) { if (txtStatus != null) txtStatus.text = s; Debug.Log("[Status] " + s); }
 
     string GetLocalIPAddress()
