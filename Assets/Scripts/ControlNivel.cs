@@ -63,10 +63,21 @@ public class ControlNivel : NetworkBehaviour
 
     void Start()
     {
-        // Si por alguna razón se arrastra manualmente una instancia en escena
-        // (backwards compatibility), mantenemos el comportamiento:
-        if (palaGuiaInstance == null && palaPrefab == null && palaGuiaInstance != null)
-            palaGuiaInstance.SetActive(false);
+        // Compatibility: si pusiste manualmente una instancia del prefab en escena (por ejemplo arrastraste Pala_Net),
+        // intenta encontrarla y usarla en lugar de la instanciada.
+        if (palaGuiaInstance == null)
+        {
+            GameObject existing = GameObject.Find("Pala_Guia_Instance");
+            if (existing == null) existing = GameObject.Find("Pala_Net");
+            if (existing != null)
+            {
+                palaGuiaInstance = existing;
+                palaGuiaInstance.SetActive(false);
+                var sr = palaGuiaInstance.GetComponent<SpriteRenderer>();
+                if (sr != null) sr.sortingOrder = 100;
+                Debug.Log("[ControlNivel] Usando instancia manual de pala en escena.");
+            }
+        }
 
         foreach (GameObject p in paredes)
             if (p != null) p.SetActive(true);

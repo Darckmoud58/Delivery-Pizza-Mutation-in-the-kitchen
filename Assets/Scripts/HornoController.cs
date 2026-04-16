@@ -321,7 +321,8 @@ public class HornoController : NetworkBehaviour
         if (IsServer) SetVulnerable(false);
     }
 
-    void SetVulnerable(bool v)
+    // <-- CAMBIO: volver público para permitir llamadas desde ControlNivel u otras clases
+    public void SetVulnerable(bool v)
     {
         if (!IsServer) return;
         vulnerable = v;

@@ -181,7 +181,7 @@ MonoBehaviour:
   velocidad: 6.34
   vidaMax: 100
   vida: 100
-  fuerzaAtaque: 10
+  fuerzaAtaque: 62
   radioAtaque: 0.46
   offsetAtaque: {x: 1.68, y: 0}
   tiempoGolpe: 0.03
@@ -240,7 +240,7 @@ MonoBehaviour:
   _initializeOrder: 0
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
-  _initializedTimestamp: -8584253822883535952
+  _initializedTimestamp: -8584253320573265363
   _localLevelOfDetailCalculationType: 0
   _useLevelOfDetail: 0
   _useRootLevelOfDetail: 1

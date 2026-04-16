@@ -1,3 +1,4 @@
+// Assets/Scripts/LogicaJugadorRed.cs
 using UnityEngine;
 using FishNet.Object;
 using System.Collections;
@@ -54,6 +55,17 @@ public class LogicaJugadorRed : NetworkBehaviour
         {
             GameObject go = BuscarObjetoInactivo("GameOverPanel");
             if (go != null) go.SetActive(false);
+        }
+
+        // Asignar la pala local (si existe la instancia creada por ControlNivel)
+        if (IsOwner)
+        {
+            var pala = FindObjectOfType<PalaSeguirJugador>();
+            if (pala != null)
+            {
+                pala.jugador = this.transform;
+                Debug.Log("[LogicaJugadorRed] Pala asignada al jugador local.");
+            }
         }
     }
 
@@ -254,9 +266,37 @@ public class LogicaJugadorRed : NetworkBehaviour
 
         if (IsOwner)
         {
-            GameObject panel = BuscarObjetoInactivo("GameOverPanel");
-            if (panel != null)
-                panel.SetActive(true);
+            // 1) intentar encontrar un Canvas llamado "GameOverCanvas" y activar su child "GameOverPanel"
+            GameObject goCanvas = GameObject.Find("GameOverCanvas");
+            if (goCanvas != null)
+            {
+                Transform panel = goCanvas.transform.Find("GameOverPanel");
+                if (panel != null)
+                {
+                    panel.gameObject.SetActive(true);
+                    Debug.Log("[LogicaJugadorRed] Activado GameOverPanel (child de GameOverCanvas).");
+                }
+                else
+                {
+                    // Si no hay child "GameOverPanel", activamos el canvas completo
+                    goCanvas.SetActive(true);
+                    Debug.Log("[LogicaJugadorRed] Activado GameOverCanvas (no encontró child GameOverPanel).");
+                }
+            }
+            else
+            {
+                // 2) fallback: buscar por nombre incluso si está inactivo usando la función existente
+                GameObject panel = BuscarObjetoInactivo("GameOverPanel");
+                if (panel != null)
+                {
+                    panel.SetActive(true);
+                    Debug.Log("[LogicaJugadorRed] Activado GameOverPanel (fallback BuscarObjetoInactivo).");
+                }
+                else
+                {
+                    Debug.LogWarning("[LogicaJugadorRed] No se encontró 'GameOverCanvas' ni 'GameOverPanel' en la escena. Asegúrate de que exista y su nombre sea EXACTO.");
+                }
+            }
         }
     }
 
