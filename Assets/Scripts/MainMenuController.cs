@@ -1,14 +1,12 @@
 // Assets/Scripts/MainMenuController.cs
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 using TMPro;
+using FishNet;
 using FishNet.Managing;
-using FishNet.Transporting; // Necesario para acceder al Transport
-
-[Serializable]
-public class RoomData { public string ip; public int port; public long created; }
+using FishNet.Transporting;
 
 public class MainMenuController : MonoBehaviour
 {
@@ -20,25 +18,22 @@ public class MainMenuController : MonoBehaviour
     public TMP_Text txtStatus;
     public GameObject heartsContainer;
 
-    [Header("Firebase (opcional)")]
-    public string firebaseBaseUrl;
-
-    [Header("Network")]
-    public int defaultPort = 7777;
-    NetworkManager netManager;
-
-    string currentRoomCode = null;
-    bool hostPrepared = false;       
-    bool hostStarted = false;        
+    [Header("Network Settings")]
+    public int defaultPort = 7770; // FishNet usa 7770 por defecto en Tugboat
+    private NetworkManager netManager;
 
     [Header("Panel Código Sala")]
     public GameObject panelCodigoSala;
     public TMP_Text txtCodigoSala;
-    public CanvasGroup panelCanvasGroup; 
+    public CanvasGroup panelCanvasGroup;
+
+    private string currentRoomCode = null;
+    private bool hostPrepared = false;
+    private bool hostStarted = false;
 
     void Awake()
     {
-        netManager = FindObjectOfType<NetworkManager>();
+        netManager = InstanceFinder.NetworkManager;
         if (heartsContainer != null) heartsContainer.SetActive(false);
         if (txtRoomCode != null) txtRoomCode.text = "";
         if (txtStatus != null) txtStatus.text = "Esperando...";
@@ -47,105 +42,85 @@ public class MainMenuController : MonoBehaviour
         hostStarted = false;
     }
 
-    // --- HOST: preparar panel (NO inicia host) ---
+    // --- HOST: Preparar sala ---
     public void OnHostPressed()
     {
         if (netManager == null) { SetStatus("NetworkManager no encontrado."); return; }
 
         string ip = GetLocalIPAddress();
-        
-        // --- ADAPTACIÓN PARA PUERTO REAL ---
         ushort actualPort = (ushort)defaultPort;
+
+        // Intentamos leer el puerto real del transporte
         if (netManager.TransportManager != null && netManager.TransportManager.Transport != null)
         {
-            // Leemos el puerto configurado en el componente Tugboat o Telepathy
             actualPort = netManager.TransportManager.Transport.GetPort();
         }
-        
+
         string display = ip + ":" + actualPort;
         currentRoomCode = display;
-        // ------------------------------------
 
         if (txtRoomCode != null) txtRoomCode.text = "IP: " + display;
 
-        Canvas targetCanvas = null;
-        if (menuRoot != null) targetCanvas = menuRoot.GetComponentInParent<Canvas>();
-        if (targetCanvas == null)
+        if (panelCodigoSala != null)
         {
-            Canvas anyCanvas = FindObjectOfType<Canvas>();
-            if (anyCanvas != null) targetCanvas = anyCanvas;
+            panelCodigoSala.SetActive(true);
+            if (txtCodigoSala != null) txtCodigoSala.text = "IP de la sala:\n" + display;
         }
 
-        if (panelCodigoSala != null && targetCanvas != null)
-        {
-            panelCodigoSala.transform.SetParent(targetCanvas.transform, false);
-            panelCodigoSala.transform.SetAsLastSibling();
+        if (panelCanvasGroup != null) 
+        { 
+            panelCanvasGroup.alpha = 1f; 
+            panelCanvasGroup.interactable = true; 
+            panelCanvasGroup.blocksRaycasts = true; 
         }
-
-        if (txtCodigoSala != null) txtCodigoSala.text = "IP de la sala:\n" + display;
-        if (panelCodigoSala != null) panelCodigoSala.SetActive(true);
-        if (panelCanvasGroup != null) { panelCanvasGroup.alpha = 1f; panelCanvasGroup.interactable = true; panelCanvasGroup.blocksRaycasts = true; }
 
         GUIUtility.systemCopyBuffer = display;
-        HideMenu();
-
         hostPrepared = true;
         hostStarted = false;
 
         SetStatus("Sala preparada. IP copiada. Pulsa 'Iniciar partida' para arrancar.");
-        Debug.Log("[MainMenu] Sala creada. Usando puerto real del transporte: " + actualPort);
     }
 
+    // --- HOST: Iniciar realidad el servidor ---
     public void ConfirmStartHost()
     {
-        if (netManager == null) { SetStatus("NetworkManager no encontrado."); return; }
-        if (!hostPrepared) { SetStatus("Primero pulsa 'Crear partida'."); return; }
-        if (hostStarted) { SetStatus("Host ya iniciado."); return; }
-
+        if (netManager == null) return;
+        if (!hostPrepared) { SetStatus("Primero prepara la sala."); return; }
+        
         try
         {
             netManager.ServerManager.StartConnection();
             netManager.ClientManager.StartConnection();
-
             hostStarted = true;
-            SetStatus("Host iniciado localmente...");
-            if (txtCodigoSala != null) txtCodigoSala.text = "Host iniciado.\nEsperando jugadores...\nIP: " + currentRoomCode;
+            
+            HideMenu();
             if (heartsContainer != null) heartsContainer.SetActive(true);
+            SetStatus("Host iniciado. Esperando jugadores...");
         }
         catch (Exception ex)
         {
-            SetStatus("Error iniciando Host: " + ex.Message);
-            Debug.LogException(ex);
+            SetStatus("Error al iniciar: " + ex.Message);
         }
     }
 
-    public void OnClientConnected()
-    {
-        if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
-        HideMenu();
-        if (heartsContainer != null) heartsContainer.SetActive(true);
-        SetStatus("Conectado al host. ¡Bienvenido!");
-    }
-
-    public void OnServerStarted()
-    {
-        SetStatus("Servidor listo. Esperando jugadores...");
-    }
-
+    // --- CLIENTE: Unirse a una sala ---
     public void OnJoinPressed()
     {
         if (netManager == null) return;
 
         string codeOrIp = (inputRoomCode != null) ? inputRoomCode.text.Trim() : "";
-        string ipAlt = (inputIP != null) ? inputIP.text.Trim() : "";
+        if (string.IsNullOrEmpty(codeOrIp) && inputIP != null) codeOrIp = inputIP.text.Trim();
 
-        if (string.IsNullOrEmpty(codeOrIp) && !string.IsNullOrEmpty(ipAlt))
-            codeOrIp = ipAlt;
+        if (string.IsNullOrEmpty(codeOrIp))
+        {
+            SetStatus("Introduce una IP válida.");
+            return;
+        }
 
-        // Si el código incluye el puerto (ej: 172.16.10.119:7770), lo separamos
         string targetIP = codeOrIp;
         string targetPort = defaultPort.ToString();
 
+        // Si el usuario puso IP:PUERTO
         if (codeOrIp.Contains(":"))
         {
             string[] parts = codeOrIp.Split(':');
@@ -153,20 +128,49 @@ public class MainMenuController : MonoBehaviour
             targetPort = parts[1];
         }
 
-        TrySetTransportAddressAndPort(targetIP, targetPort);
+        // --- CONFIGURACIÓN DEL TRANSPORTE ---
+        ConfigureTransport(targetIP, targetPort);
+
+        // --- CONECTAR ---
         netManager.ClientManager.StartConnection();
 
-        if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
         HideMenu();
+        if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
         if (heartsContainer != null) heartsContainer.SetActive(true);
 
-        SetStatus("Intentando conectar a " + targetIP + ":" + targetPort + "...");
+        SetStatus("Conectando a " + targetIP + "...");
     }
 
-    // --- UTILIDADES --------------------------------------------------------
-    void HideMenu() { if (menuRoot != null) menuRoot.SetActive(false); }
+    private void ConfigureTransport(string ip, string portText)
+    {
+        if (netManager.TransportManager == null || netManager.TransportManager.Transport == null) return;
 
-    void SetStatus(string s) { if (txtStatus != null) txtStatus.text = s; }
+        var transport = netManager.TransportManager.Transport;
+
+        // Caso Tugboat (Estándar de Fish-Net)
+        if (transport is FishNet.Transporting.Tugboat.Tugboat tug)
+        {
+            tug.SetClientAddress(ip);
+            if (ushort.TryParse(portText, out ushort p)) tug.SetPort(p);
+            return;
+        }
+
+        // Caso Genérico por Reflection (por si usas otro)
+        try
+        {
+            var type = transport.GetType();
+            var addrProp = type.GetProperty("ClientAddress") ?? type.GetProperty("Address");
+            if (addrProp != null) addrProp.SetValue(transport, ip);
+
+            var portProp = type.GetProperty("Port");
+            if (portProp != null && ushort.TryParse(portText, out ushort p)) portProp.SetValue(transport, p);
+        }
+        catch (Exception e) { Debug.LogWarning("Error configurando transporte: " + e.Message); }
+    }
+
+    // --- ÚTILES ---
+    void HideMenu() { if (menuRoot != null) menuRoot.SetActive(false); }
+    void SetStatus(string s) { if (txtStatus != null) txtStatus.text = s; Debug.Log("[Status] " + s); }
 
     string GetLocalIPAddress()
     {
@@ -179,32 +183,5 @@ public class MainMenuController : MonoBehaviour
         }
         catch { }
         return "127.0.0.1";
-    }
-
-    void TrySetTransportAddressAndPort(string ip, string portText)
-    {
-        if (netManager == null) return;
-        Component[] comps = netManager.GetComponents<Component>();
-        foreach (var c in comps)
-        {
-            var props = c.GetType().GetProperties();
-            foreach (var p in props)
-            {
-                try
-                {
-                    if (p.Name.ToLower().Contains("address") && p.PropertyType == typeof(string) && p.CanWrite)
-                        p.SetValue(c, ip);
-                    if (p.Name.ToLower().Contains("port") && p.PropertyType == typeof(int) && p.CanWrite)
-                    {
-                        if (int.TryParse(portText, out int port)) p.SetValue(c, port);
-                    }
-                    if (p.Name.ToLower().Contains("port") && p.PropertyType == typeof(ushort) && p.CanWrite)
-                    {
-                        if (ushort.TryParse(portText, out ushort port)) p.SetValue(c, port);
-                    }
-                }
-                catch { }
-            }
-        }
     }
 }
