@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using TMPro;
 using FishNet.Managing;
+using FishNet.Transporting; // Necesario para acceder al Transport
 
 [Serializable]
 public class RoomData { public string ip; public int port; public long created; }
@@ -13,13 +14,13 @@ public class MainMenuController : MonoBehaviour
 {
     [Header("UI (TMP)")]
     public GameObject menuRoot;
-    public TMP_InputField inputRoomCode;   // campo principal (puede ser código o IP)
-    public TMP_InputField inputIP;         // campo alternativo (si usas otro input)
-    public TMP_Text txtRoomCode;           // Text visible en el menú (opcional)
-    public TMP_Text txtStatus;             // Text de estado (abajo)
+    public TMP_InputField inputRoomCode;
+    public TMP_InputField inputIP;
+    public TMP_Text txtRoomCode;
+    public TMP_Text txtStatus;
     public GameObject heartsContainer;
 
-    [Header("Firebase")]
+    [Header("Firebase (opcional)")]
     public string firebaseBaseUrl;
 
     [Header("Network")]
@@ -27,10 +28,13 @@ public class MainMenuController : MonoBehaviour
     NetworkManager netManager;
 
     string currentRoomCode = null;
+    bool hostPrepared = false;       
+    bool hostStarted = false;        
 
     [Header("Panel Código Sala")]
-    public GameObject panelCodigoSala;     // panel que muestra la IP/código
-    public TMP_Text txtCodigoSala;         // text dentro del panel para mostrar IP/código
+    public GameObject panelCodigoSala;
+    public TMP_Text txtCodigoSala;
+    public CanvasGroup panelCanvasGroup; 
 
     void Awake()
     {
@@ -38,204 +42,145 @@ public class MainMenuController : MonoBehaviour
         if (heartsContainer != null) heartsContainer.SetActive(false);
         if (txtRoomCode != null) txtRoomCode.text = "";
         if (txtStatus != null) txtStatus.text = "Esperando...";
-        if (panelCodigoSala != null) panelCodigoSala.SetActive(false); // start hidden
+        if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
+        hostPrepared = false;
+        hostStarted = false;
     }
 
-    // --- HOST ---------------------------------------------------------------
+    // --- HOST: preparar panel (NO inicia host) ---
     public void OnHostPressed()
     {
         if (netManager == null) { SetStatus("NetworkManager no encontrado."); return; }
 
+        string ip = GetLocalIPAddress();
+        
+        // --- ADAPTACIÓN PARA PUERTO REAL ---
+        ushort actualPort = (ushort)defaultPort;
+        if (netManager.TransportManager != null && netManager.TransportManager.Transport != null)
+        {
+            // Leemos el puerto configurado en el componente Tugboat o Telepathy
+            actualPort = netManager.TransportManager.Transport.GetPort();
+        }
+        
+        string display = ip + ":" + actualPort;
+        currentRoomCode = display;
+        // ------------------------------------
+
+        if (txtRoomCode != null) txtRoomCode.text = "IP: " + display;
+
+        Canvas targetCanvas = null;
+        if (menuRoot != null) targetCanvas = menuRoot.GetComponentInParent<Canvas>();
+        if (targetCanvas == null)
+        {
+            Canvas anyCanvas = FindObjectOfType<Canvas>();
+            if (anyCanvas != null) targetCanvas = anyCanvas;
+        }
+
+        if (panelCodigoSala != null && targetCanvas != null)
+        {
+            panelCodigoSala.transform.SetParent(targetCanvas.transform, false);
+            panelCodigoSala.transform.SetAsLastSibling();
+        }
+
+        if (txtCodigoSala != null) txtCodigoSala.text = "IP de la sala:\n" + display;
+        if (panelCodigoSala != null) panelCodigoSala.SetActive(true);
+        if (panelCanvasGroup != null) { panelCanvasGroup.alpha = 1f; panelCanvasGroup.interactable = true; panelCanvasGroup.blocksRaycasts = true; }
+
+        GUIUtility.systemCopyBuffer = display;
+        HideMenu();
+
+        hostPrepared = true;
+        hostStarted = false;
+
+        SetStatus("Sala preparada. IP copiada. Pulsa 'Iniciar partida' para arrancar.");
+        Debug.Log("[MainMenu] Sala creada. Usando puerto real del transporte: " + actualPort);
+    }
+
+    public void ConfirmStartHost()
+    {
+        if (netManager == null) { SetStatus("NetworkManager no encontrado."); return; }
+        if (!hostPrepared) { SetStatus("Primero pulsa 'Crear partida'."); return; }
+        if (hostStarted) { SetStatus("Host ya iniciado."); return; }
+
         try
         {
-            // Start server + client (host)
             netManager.ServerManager.StartConnection();
             netManager.ClientManager.StartConnection();
 
+            hostStarted = true;
             SetStatus("Host iniciado localmente...");
-            HideMenu();
+            if (txtCodigoSala != null) txtCodigoSala.text = "Host iniciado.\nEsperando jugadores...\nIP: " + currentRoomCode;
             if (heartsContainer != null) heartsContainer.SetActive(true);
-
-            // Construir la IP:porta y mostrarla
-            string ip = GetLocalIPAddress();
-            string display = ip + ":" + defaultPort;
-            currentRoomCode = display;                // guardamos para copiar / reusar
-
-            // Mostrar en el texto del menú (si existe)
-            if (txtRoomCode != null)
-            {
-                txtRoomCode.text = "IP: " + display;
-            }
-
-            // Mostrar en el panel de código y activarlo
-            if (txtCodigoSala != null) txtCodigoSala.text = "IP de la sala:\n" + display;
-            if (panelCodigoSala != null) panelCodigoSala.SetActive(true);
-
-            // Copiar automáticamente al portapapeles
-            GUIUtility.systemCopyBuffer = display;
-
-            Debug.Log("[MainMenu] Host iniciado. IP local: " + display);
-            SetStatus("Sala creada. IP copiada al portapapeles.");
         }
         catch (Exception ex)
         {
             SetStatus("Error iniciando Host: " + ex.Message);
             Debug.LogException(ex);
         }
-
-        // Si quieres también registrar en Firebase, descomenta:
-        // StartCoroutine(HostRegisterFlow());
     }
 
-    // Copiar el código/IP actual al portapapeles (botón "Copiar")
-    public void CopiarCodigoAlPortapapeles()
-    {
-        if (!string.IsNullOrEmpty(currentRoomCode))
-        {
-            GUIUtility.systemCopyBuffer = currentRoomCode;
-            SetStatus("Código copiado: " + currentRoomCode);
-            Debug.Log("[MainMenu] Código copiado: " + currentRoomCode);
-        }
-        else
-        {
-            SetStatus("No hay código para copiar.");
-            Debug.LogWarning("[MainMenu] Intento de copiar pero currentRoomCode vacío.");
-        }
-    }
-
-    // Cierra el panel de código (botón "Cerrar" si lo pones)
-    public void CerrarPanelCodigo()
+    public void OnClientConnected()
     {
         if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
-        // Nota: no reabrimos el menú principal porque el host ya está iniciado.
-        // Si quieres que cerrar vuelva al menú, descomenta la siguiente línea:
-        // if (menuRoot != null) menuRoot.SetActive(true);
+        HideMenu();
+        if (heartsContainer != null) heartsContainer.SetActive(true);
+        SetStatus("Conectado al host. ¡Bienvenido!");
     }
 
-    // --- JOIN ---------------------------------------------------------------
+    public void OnServerStarted()
+    {
+        SetStatus("Servidor listo. Esperando jugadores...");
+    }
+
     public void OnJoinPressed()
     {
-        if (netManager == null) { SetStatus("NetworkManager no encontrado."); return; }
+        if (netManager == null) return;
 
-        // Leer ambos campos (preferir inputRoomCode, fallback a inputIP)
         string codeOrIp = (inputRoomCode != null) ? inputRoomCode.text.Trim() : "";
         string ipAlt = (inputIP != null) ? inputIP.text.Trim() : "";
-
-        Debug.Log($"[MainMenu] OnJoinPressed read inputRoomCode='{codeOrIp}' inputIP='{ipAlt}'");
 
         if (string.IsNullOrEmpty(codeOrIp) && !string.IsNullOrEmpty(ipAlt))
             codeOrIp = ipAlt;
 
-        if (codeOrIp == "localhost" || codeOrIp.Contains("."))
+        // Si el código incluye el puerto (ej: 172.16.10.119:7770), lo separamos
+        string targetIP = codeOrIp;
+        string targetPort = defaultPort.ToString();
+
+        if (codeOrIp.Contains(":"))
         {
-            TrySetTransportAddressAndPort(codeOrIp, defaultPort.ToString());
-            netManager.ClientManager.StartConnection();
-            HideMenu();
-            if (heartsContainer != null) heartsContainer.SetActive(true);
-            SetStatus("Conectando a " + codeOrIp + "...");
-            Debug.Log("[MainMenu] Cliente iniciando conexión a " + codeOrIp);
-            return;
+            string[] parts = codeOrIp.Split(':');
+            targetIP = parts[0];
+            targetPort = parts[1];
         }
 
-        if (!string.IsNullOrEmpty(codeOrIp))
-        {
-            StartCoroutine(JoinByRoomCodeCoroutine(codeOrIp));
-        }
-        else
-        {
-            SetStatus("Escribe un código o IP.");
-        }
-    }
+        TrySetTransportAddressAndPort(targetIP, targetPort);
+        netManager.ClientManager.StartConnection();
 
-    IEnumerator JoinByRoomCodeCoroutine(string code)
-    {
-        SetStatus("Buscando sala " + code + "...");
-        string ipFound = null;
-        yield return GetRoomFromFirebaseCoroutine(code, (ip, port) => { ipFound = ip; });
+        if (panelCodigoSala != null) panelCodigoSala.SetActive(false);
+        HideMenu();
+        if (heartsContainer != null) heartsContainer.SetActive(true);
 
-        if (!string.IsNullOrEmpty(ipFound))
-        {
-            SetStatus("Sala encontrada. Conectando...");
-            TrySetTransportAddressAndPort(ipFound, defaultPort.ToString());
-            netManager.ClientManager.StartConnection();
-            HideMenu();
-            if (heartsContainer != null) heartsContainer.SetActive(true);
-        }
-        else
-        {
-            SetStatus("Código no encontrado.");
-        }
-    }
-
-    // --- FIREBASE (opcionales) ----------------------------------------------
-    IEnumerator HostRegisterFlow()
-    {
-        yield return null;
-        string localIP = GetLocalIPAddress();
-        string code = UnityEngine.Random.Range(1000, 9999).ToString();
-
-        SetStatus("Registrando sala " + code + "...");
-
-        bool ok = false;
-        yield return RegisterRoomOnFirebaseCoroutine(code, localIP, defaultPort, (success) => ok = success);
-
-        if (ok)
-        {
-            currentRoomCode = code;
-            if (txtRoomCode != null) txtRoomCode.text = "SALA: " + code;
-            GUIUtility.systemCopyBuffer = code;
-            SetStatus("Sala lista. Código copiado.");
-        }
-        else
-        {
-            SetStatus("Error al registrar en Firebase.");
-        }
-    }
-
-    IEnumerator RegisterRoomOnFirebaseCoroutine(string code, string ip, int port, Action<bool> onComplete)
-    {
-        if (string.IsNullOrEmpty(firebaseBaseUrl)) { onComplete?.Invoke(false); yield break; }
-        string url = $"{firebaseBaseUrl}/{code}.json";
-        string json = JsonUtility.ToJson(new RoomData { ip = ip, port = port, created = DateTimeOffset.UtcNow.ToUnixTimeSeconds() });
-
-        using (UnityWebRequest put = UnityWebRequest.Put(url, json))
-        {
-            put.method = UnityWebRequest.kHttpVerbPUT;
-            yield return put.SendWebRequest();
-            onComplete?.Invoke(put.result == UnityWebRequest.Result.Success);
-        }
-    }
-
-    IEnumerator GetRoomFromFirebaseCoroutine(string code, Action<string, int> onResult)
-    {
-        if (string.IsNullOrEmpty(firebaseBaseUrl)) { onResult?.Invoke(null, 0); yield break; }
-        string url = $"{firebaseBaseUrl}/{code}.json";
-        using (UnityWebRequest get = UnityWebRequest.Get(url))
-        {
-            yield return get.SendWebRequest();
-            if (get.result == UnityWebRequest.Result.Success && get.downloadHandler.text != "null")
-            {
-                var rd = JsonUtility.FromJson<RoomData>(get.downloadHandler.text);
-                onResult?.Invoke(rd.ip, rd.port);
-            }
-            else { onResult?.Invoke(null, 0); }
-        }
+        SetStatus("Intentando conectar a " + targetIP + ":" + targetPort + "...");
     }
 
     // --- UTILIDADES --------------------------------------------------------
     void HideMenu() { if (menuRoot != null) menuRoot.SetActive(false); }
-    void SetStatus(string s) { if (txtStatus != null) txtStatus.text = s; Debug.Log("[MainMenu] " + s); }
+
+    void SetStatus(string s) { if (txtStatus != null) txtStatus.text = s; }
 
     string GetLocalIPAddress()
     {
-        var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-        foreach (var ip in host.AddressList)
-            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                return ip.ToString();
+        try
+        {
+            var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    return ip.ToString();
+        }
+        catch { }
         return "127.0.0.1";
     }
 
-    // Reflection-light way to set transport address on FishNet components:
     void TrySetTransportAddressAndPort(string ip, string portText)
     {
         if (netManager == null) return;
@@ -253,13 +198,12 @@ public class MainMenuController : MonoBehaviour
                     {
                         if (int.TryParse(portText, out int port)) p.SetValue(c, port);
                     }
-                    if (p.Name.ToLower().Contains("port") && p.PropertyType == typeof(string) && p.CanWrite)
+                    if (p.Name.ToLower().Contains("port") && p.PropertyType == typeof(ushort) && p.CanWrite)
                     {
-                        // some transports expose port as string
-                        p.SetValue(c, portText);
+                        if (ushort.TryParse(portText, out ushort port)) p.SetValue(c, port);
                     }
                 }
-                catch { /* ignore reflection errors */ }
+                catch { }
             }
         }
     }
